@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EE2D75AF2EC092370065F6DE /* AnyLanguageModel in Frameworks */ = {isa = PBXBuildFile; productRef = EE2D75AE2EC092370065F6DE /* AnyLanguageModel */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		EE70BEB12EB759EA00C3ED1E /* DailyCosmos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyCosmos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EE2D75AF2EC092370065F6DE /* AnyLanguageModel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = DailyCosmos;
 			packageProductDependencies = (
+				EE2D75AE2EC092370065F6DE /* AnyLanguageModel */,
 			);
 			productName = DailyCosmos;
 			productReference = EE70BEB12EB759EA00C3ED1E /* DailyCosmos.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = EE70BEA82EB759EA00C3ED1E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EE2D75AD2EC092370065F6DE /* XCRemoteSwiftPackageReference "AnyLanguageModel" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = EE70BEB22EB759EA00C3ED1E /* Products */;
 			projectDirPath = "";
@@ -351,6 +360,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EE2D75AD2EC092370065F6DE /* XCRemoteSwiftPackageReference "AnyLanguageModel" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/AnyLanguageModel";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EE2D75AE2EC092370065F6DE /* AnyLanguageModel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EE2D75AD2EC092370065F6DE /* XCRemoteSwiftPackageReference "AnyLanguageModel" */;
+			productName = AnyLanguageModel;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = EE70BEA92EB759EA00C3ED1E /* Project object */;
 }
