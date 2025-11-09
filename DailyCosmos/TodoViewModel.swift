@@ -1,3 +1,4 @@
+import AnyLanguageModel
 import Foundation
 import Combine
 import SwiftUI
@@ -10,11 +11,15 @@ final class TodoViewModel: ObservableObject {
     @Published var includeDueDate: Bool = false
     @Published var newDueDate: Date = Date()
     @Published var showAddSheet: Bool = false
+    @Published var naturalInput: String = ""
+    @Published var isProcessingNaturalInput: Bool = false
+    @Published var naturalInputError: String?
 
     private let fileManager = FileManager.default
     private let documentsURL: URL
     private let notesURL: URL
     private let todoFileURL: URL
+    private let iso8601Formatter = ISO8601DateFormatter()
 
     init() {
         let documentDirectories = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
@@ -134,5 +139,97 @@ final class TodoViewModel: ObservableObject {
                 print("Failed to schedule notification: \(error)")
             }
         }
+    }
+
+    private var geminiAPIKey: String {
+        UserDefaults.standard.string(forKey: StorageKeys.geminiAPIKey) ?? ""
+    }
+
+    func addFromGemini(input: String) async {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let apiKey = geminiAPIKey
+        guard !apiKey.isEmpty else {
+            naturalInputError = "Paste your Gemini API key from Settings first."
+            return
+        }
+
+        isProcessingNaturalInput = true
+        naturalInputError = nil
+        defer { isProcessingNaturalInput = false }
+
+        do {
+            let model = GeminiLanguageModel(apiKey: apiKey, model: "gemini-2.5-flash")
+            let session = LanguageModelSession(model: model)
+            let prompt = """
+            Extract a to-do item from the input. Respond with JSON only:
+            {"title": "string", "dueDate": "ISO-8601 string or null"}
+            Local timezone: \(localTimeZoneDescription())
+            Current local time: \(currentLocalTimestamp())
+            Input: \(trimmed)
+            """
+            let response = try await session.respond {
+                Prompt(prompt)
+            }
+
+            guard let jsonString = extractJSONString(from: response.content),
+                  let data = jsonString.data(using: .utf8) else {
+                naturalInputError = "Gemini did not return structured JSON."
+                return
+            }
+
+            let decoder = JSONDecoder()
+            let parsed = try decoder.decode(GeminiParsedItem.self, from: data)
+            let title = parsed.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !title.isEmpty else {
+                naturalInputError = "Gemini returned an empty title."
+                return
+            }
+
+            let dueDate: Date?
+            if let dateString = parsed.dueDate,
+               !dateString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                dueDate = iso8601Formatter.date(from: dateString)
+            } else {
+                dueDate = nil
+            }
+
+            let item = TodoItem(title: title, dueDate: dueDate)
+            items.append(item)
+            scheduleNotification(for: item)
+            naturalInput = ""
+            saveItems()
+        } catch {
+            naturalInputError = "Gemini request failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func extractJSONString(from text: String) -> String? {
+        guard let start = text.firstIndex(of: "{"),
+              let end = text.lastIndex(of: "}") else {
+            return nil
+        }
+        return String(text[start ... end])
+    }
+
+    private func localTimeZoneDescription() -> String {
+        let zone = TimeZone.current
+        let seconds = zone.secondsFromGMT()
+        let hours = seconds / 3600
+        let minutes = abs(seconds % 3600) / 60
+        return "\(zone.identifier) (UTC\(String(format: "%+d", hours)):\(String(format: "%02d", minutes)))"
+    }
+
+    private func currentLocalTimestamp() -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = .current
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: Date())
+    }
+
+    private struct GeminiParsedItem: Codable {
+        let title: String
+        let dueDate: String?
     }
 }
